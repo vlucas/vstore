@@ -74,7 +74,7 @@ module.exports.create = function create(json) {
         var cb = cbs[i];
 
         if (key == cb.key || cb.key == '*') {
-          (cb.opts.sync) ? cb.cb(api, state) : setTimeout(function() { return cbs[this].cb(api, state); }.bind(i), 0);
+          (cb.opts.sync) ? cb.cb(state) : setTimeout(function() { return cbs[this].cb(state); }.bind(i), 0);
         }
       }
     },
@@ -84,6 +84,7 @@ module.exports.create = function create(json) {
 
       if (kt == 'function') {
         cb = keys;
+        opts = cb || {};
         keys = ['*'];
       } else if (kt == 'string') {
         keys = [keys];

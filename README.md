@@ -13,6 +13,14 @@ require a lot of repetitive boilerplate code that gets in the way.
 *vstore* is based around `get` and `set` calls with nested keys for object
 structures, like `store.get('foo.bar.baz')`.
 
+## Install
+
+Install vstore with NPM:
+
+```
+npm install vstore --save
+```
+
 ## Example
 
 Import if using ES6+ or Transpiling:
@@ -52,7 +60,7 @@ Set a value to the store with string key. Just like `get`, this accepts simple
 keys like `user` and nested keys like `foo.bar.baz`.
 
 ```js
-store.get('user', { id: 2, name: 'Testy McTesterpants', email: 'test@example.com' });
+store.set('user', { id: 2, name: 'Testy McTesterpants', email: 'test@example.com' });
 store.set('foo.bar.baz', 'qux');
 ```
 
@@ -61,13 +69,12 @@ store.set('foo.bar.baz', 'qux');
 Subscribe a function to changes in the store. Just like `get`, this accepts
 simple keys like `user` and nested keys like `foo.bar.baz`.
 
-Subscribe callbacks receive the store instance as the first argument, and the
-current state as the second argument.
+Subscribe callbacks receive the current state as the first argument.
 
 *Returns an id* of the subscription that can be used with `unsubscribe(id)`.
 
 ```js
-function updateCart(store, state) {
+function updateCart(state) {
   updateCartItemTotals(state.shopping.cart);
 }
 ```

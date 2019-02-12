@@ -112,7 +112,7 @@ describe('vstore.subscribe', function () {
     }, TIMEOUT_WAIT);
   });
 
-  it('should return the current store instance as the first argument in a callback', function (done) {
+  it('should return the current store state as the first argument in a callback', function (done) {
     var store = vstore.create({ foo: 'bar' });
     var result;
 
@@ -120,20 +120,20 @@ describe('vstore.subscribe', function () {
     store.set('foo', 'baz');
 
     setTimeout(function () {
-      expect(result).toEqual(store);
+      expect(result).toEqual(store.get());
       done();
     }, TIMEOUT_WAIT);
   });
 
-  it('should return the current store state as the second argument in a callback', function (done) {
-    var store = vstore.create({ foo: 'bar' });
-    var result;
+  it('should subscribe to multiple keys when given array', function (done) {
+    var store = vstore.create({ foo: 'bar', bar: 'baz' });
 
-    store.subscribe('foo', function (_, res) { result = res; });
+    store.subscribe(['foo', 'bar'], counterIncrement);
     store.set('foo', 'baz');
+    store.set('bar', 'qux');
 
     setTimeout(function () {
-      expect(result).toEqual(store.get());
+      expect(counter).toEqual(2);
       done();
     }, TIMEOUT_WAIT);
   });
