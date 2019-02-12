@@ -1,0 +1,24 @@
+{
+  "name": "vstore",
+  "version": "1.0.0",
+  "description": "Featherweight key-based value store with zero dependencies",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest ---watch"
+  },
+  "keywords": [
+    "redux",
+    "central",
+    "store",
+    "app",
+    "store",
+    "value",
+    "store"
+  ],
+  "author": "Vance Lucas <vance@vancelucas.com>",
+  "license": "BSD-3-Clause",
+  "devDependencies": {
+    "jest": "^24.1.0"
+  }
+}
