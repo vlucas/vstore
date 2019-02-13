@@ -96,6 +96,14 @@ If you want to subscribe to a specific key, specify the key as the first argumen
 store.subscribe('shopping.cart', updateCart);
 ```
 
+#### Subscribe to multiple keys
+
+If you want to subscribe to multiple keys, specify the key as an array in the first argument:
+
+```js
+store.subscribe(['shopping.cart', 'user'], updateCart);
+```
+
 ### unsubscribe(id|callback)
 
 Unsubscribe by `id` or callback. Unsubscribes *all* registered callbacks when
@@ -105,12 +113,17 @@ called with no arguments.
 store.unsubscribe();
 ```
 
-With callback only:
+With key only (will unsubscribe ALL listeners on this key):
 ```js
-store.unsubscribe(updateCart);
+store.unsubscribe('shopping.cart');
 ```
 
-With id (returned from `subscribe` call):
+With key and callback:
+```js
+store.unsubscribe('shopping.cart', updateCart);
+```
+
+With subscriber id (returned from `subscribe` call):
 ```js
 var id = store.subscribe('shopping.cart', updateCart);
 

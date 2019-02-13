@@ -138,3 +138,58 @@ describe('vstore.subscribe', function () {
     }, TIMEOUT_WAIT);
   });
 });
+
+describe('vstore.unsubscribe', function () {
+  var counter = 0;
+  var counter2 = 0;
+  var counterIncrement = function () { counter = counter+1; };
+  var counterIncrement2 = function () { counter2 = counter2+1; };
+  var TIMEOUT_WAIT = 1;
+
+  beforeEach(function () {
+    counter = 0;
+    counter2 = 0;
+  });
+
+  it('should unsubscribe with matching key and callback', function (done) {
+    var store = vstore.create({ foo: 'bar' });
+
+    store.subscribe('foo', counterIncrement);
+    store.unsubscribe('foo', counterIncrement);
+    store.set('foo', 'baz');
+
+    setTimeout(function () {
+      expect(counter).toEqual(0);
+      done();
+    }, TIMEOUT_WAIT);
+  });
+
+  it('should unsubscribe with key only', function (done) {
+    var store = vstore.create({ foo: 'bar', bar: 'baz' });
+
+    store.subscribe('foo', counterIncrement);
+    store.subscribe('foo', counterIncrement2);
+    store.unsubscribe('foo');
+    store.set('foo', 'baz');
+    store.set('bar', 'qux');
+
+    setTimeout(function () {
+      expect(counter).toEqual(0);
+      expect(counter2).toEqual(0);
+      done();
+    }, TIMEOUT_WAIT);
+  });
+
+  it('should unsubscribe with subscriber id', function (done) {
+    var store = vstore.create({ foo: 'bar', bar: 'baz' });
+    var id = store.subscribe('foo', counterIncrement);
+
+    store.unsubscribe(id);
+    store.set('foo', 'baz');
+
+    setTimeout(function () {
+      expect(counter).toEqual(0);
+      done();
+    }, TIMEOUT_WAIT);
+  });
+});

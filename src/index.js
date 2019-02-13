@@ -50,7 +50,7 @@ module.exports.create = function create(json) {
   var state = clone(json);
   var cbs = [];
   var api = {
-    get: function get(key) {
+    get: function(key) {
       if (!key) {
         return clone(state);
       }
@@ -59,7 +59,7 @@ module.exports.create = function create(json) {
       return typeof v == 'object' ? clone(v) : v;
     },
 
-    set: function set(key, val, opts) {
+    set: function(key, val, opts) {
       if (!opts || !opts.silent) {
         api.trigger(key, opts);
       }
@@ -67,18 +67,19 @@ module.exports.create = function create(json) {
       state = clone(state);
       return state;
     },
-    trigger: function trigger(key, opts) {
+    trigger: function(key, opts) {
       var l = cbs.length;
 
       for(var i = 0; i < l; i++) {
         var cb = cbs[i];
 
+        if (!cb) { continue; }
         if (key == cb.key || cb.key == '*') {
           (cb.opts.sync) ? cb.cb(state) : setTimeout(function() { return cbs[this].cb(state); }.bind(i), 0);
         }
       }
     },
-    subscribe: function subscribe(keys, cb, opts) {
+    subscribe: function(keys, cb, opts) {
       var id = rand();
       var kt = typeof keys;
 
@@ -101,20 +102,20 @@ module.exports.create = function create(json) {
 
       return id;
     },
-    unsubscribe: function(id) {
-      if (!id) { // unsubscribe all when no arguments
+    unsubscribe: function(id, fn) {
+      if (id === undefined) { // unsubscribe all when no arguments
         cbs = [];
         return true;
       }
 
-      var l = cbs.length;
-
-      for(var i = 0; i < l; i++) {
-        if (id == cbs[i].id || id == cbs[i].cb) {
-          delete cbs[i];
-          return true;
-        }
-      }
+      cbs = cbs.filter(function (cb) {
+        return !(
+          id == cb.id
+          || id == cb.key
+          || id == cb.cb
+          || (id == cb.key && fn == cb.cb)
+        );
+      });
     }
   };
 
