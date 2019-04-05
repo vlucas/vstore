@@ -1,41 +1,45 @@
-# vstore
+# valstore
 
 Featherweight key-based central store of state with zero dependencies.
 
-Spiritual successor to [toystore](https://github.com/vlucas/toystore). *vstore*
+Spiritual successor to [toystore](https://github.com/vlucas/toystore). *valstore*
 is lighter weight, has no dependencies, and has a smaller, leaner API.
+
+Val = Value
+
+Store = Central store of application state
 
 ## Easy to Learn and Use
 
 Other state management systems can be difficult or cumbersome to use, or
 require a lot of repetitive boilerplate code that gets in the way.
 
-*vstore* is based around `get` and `set` calls with nested keys for object
+*valstore* is based around `get` and `set` calls with nested keys for object
 structures, like `store.get('foo.bar.baz')`.
 
 ## Install
 
-Install vstore with NPM:
+Install valstore with NPM:
 
 ```
-npm install vstore --save
+npm install valstore --save
 ```
 
 ## Example
 
 Import if using ES6+ or Transpiling:
 ```js
-import vstore from 'vstore';
+import valstore from 'valstore';
 ```
 
 Require if using ES5 or Node.js:
 ```js
-const vstore = require('vstore');
+const valstore = require('valstore');
 ```
 
-Create a new store instance using `vstore.create()`:
+Create a new store instance using `valstore.create()`:
 ```js
-var store = vstore.create({
+var store = valstore.create({
   foo: {
     bar: 'baz'
   }

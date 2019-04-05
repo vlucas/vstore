@@ -1,5 +1,5 @@
 {
-  "name": "vstore",
+  "name": "valstore",
   "version": "1.0.0",
   "description": "Featherweight key-based value store with zero dependencies",
   "main": "src/index.js",
