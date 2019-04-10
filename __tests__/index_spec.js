@@ -112,6 +112,18 @@ describe('vstore.subscribe', function () {
     }, TIMEOUT_WAIT);
   });
 
+  it('should call subscriber on root key when nested key receives an update', function (done) {
+    var store = vstore.create({ cart: { items: [] } });
+
+    store.subscribe('cart', counterIncrement); // subscribe to root key
+    store.set('cart.items', [ 123 ]); // update nested key
+
+    setTimeout(function () {
+      expect(counter).toEqual(1);
+      done();
+    }, TIMEOUT_WAIT);
+  });
+
   it('should return the current store state as the first argument in a callback', function (done) {
     var store = vstore.create({ foo: 'bar' });
     var result;

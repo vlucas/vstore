@@ -6,6 +6,19 @@ function rand(length) {
   return (+new Date * Math.random()).toString(36).substring(0, length || 12);
 }
 
+function allKeys(key) {
+  var arr = [];
+
+  key.split('.').reduce(function(str, item, index) {
+    var next = str ? str + '.' + item : item;
+
+    arr.push(next);
+    return next;
+  }, '');
+
+  return arr;
+}
+
 function oget(obj, props) {
   if (typeof props == 'string') {
     props = props.split('.');
@@ -67,17 +80,19 @@ module.exports.create = function create(json) {
       state = clone(state);
       return state;
     },
-    trigger: function(key, opts) {
+    trigger: function(sKey, opts) {
       var l = cbs.length;
 
-      for(var i = 0; i < l; i++) {
-        var cb = cbs[i];
+      allKeys(sKey).map(function(key) {
+        for(var i = 0; i < l; i++) {
+          var cb = cbs[i];
 
-        if (!cb) { continue; }
-        if (key == cb.key || cb.key == '*') {
-          (cb.opts.sync) ? cb.cb(state) : setTimeout(function() { return cbs[this].cb(state); }.bind(i), 0);
+          if (!cb) { continue; }
+          if (key == cb.key || cb.key == '*') {
+            (cb.opts.sync) ? cb.cb(state) : setTimeout(function() { return cbs[this].cb(state); }.bind(i), 0);
+          }
         }
-      }
+      });
     },
     subscribe: function(keys, cb, opts) {
       var id = rand();
