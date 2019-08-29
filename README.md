@@ -1,5 +1,10 @@
 # valstore
 
+[![NPM](https://badgen.net/npm/v/valstore)](https://www.npmjs.com/package/valstore)
+[![Build
+Status](https://travis-ci.org/vlucas/valstore.png?branch=master)](https://travis-ci.org/vlucas/valstore)
+![Minzipped Size](https://badgen.net/bundlephobia/minzip/valstore)
+
 Featherweight key-based central store of state with zero dependencies.
 
 Spiritual successor to [toystore](https://github.com/vlucas/toystore). *valstore*
