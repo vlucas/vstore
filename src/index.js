@@ -19,6 +19,20 @@ function allKeys(key) {
   return arr;
 }
 
+function deepFreeze(object) {
+  // Retrieve the property names defined on object
+  var propNames = Object.getOwnPropertyNames(object);
+
+  // Freeze properties before freezing self
+  for (let name of propNames) {
+    let value = object[name];
+
+    object[name] = value && typeof value === "object" ? deepFreeze(value) : value;
+  }
+
+  return Object.freeze(object);
+}
+
 function oget(obj, props) {
   if (typeof props == 'string') {
     props = props.split('.');
@@ -60,24 +74,25 @@ function oset(obj, props, value) {
  * Export 'create' function
  */
 module.exports.create = function create(json) {
-  var state = clone(json);
+  var state = deepFreeze(json);
   var cbs = [];
   var api = {
     get: function(key) {
       if (!key) {
-        return clone(state);
+        return state;
       }
       var v = oget(state, key);
 
-      return typeof v == 'object' ? clone(v) : v;
+      return v;
     },
 
     set: function(key, val, opts) {
       if (!opts || !opts.silent) {
         api.trigger(key, opts);
       }
-      oset(state, key, val);
       state = clone(state);
+      oset(state, key, val);
+      state = deepFreeze(state);
       return state;
     },
     trigger: function(sKey, opts) {
@@ -136,3 +151,6 @@ module.exports.create = function create(json) {
 
   return api;
 }
+
+module.exports.clone = clone;
+module.exports.deepFreeze = deepFreeze;
