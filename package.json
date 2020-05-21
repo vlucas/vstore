@@ -19,6 +19,6 @@
   "author": "Vance Lucas <vance@vancelucas.com>",
   "license": "BSD-3-Clause",
   "devDependencies": {
-    "jest": "^24.1.0"
+    "jest": "^26.0.1"
   }
 }
