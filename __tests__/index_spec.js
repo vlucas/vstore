@@ -78,6 +78,54 @@ describe('valstore.set', function () {
   });
 });
 
+describe('valstore.transaction', function () {
+  var counter = 0;
+  var counterIncrement = function () { counter = counter+1; };
+
+  beforeEach(function () {
+    counter = 0;
+  });
+
+  it('should broadcast updates only once at the end of the transaction', function () {
+    var store = valstore.create({
+      foo: 'bar',
+      bar: 'baz',
+      user: null,
+      someData: {
+        someId: 1,
+      },
+    });
+
+    store.subscribe(counterIncrement, { sync: true });
+
+    store.transaction(function () {
+      store.set('user', { id: 1, username: 'test', name: 'Testy McTesterpants' });
+      store.set('someData.someId', 2);
+    }, { sync: true });
+
+    expect(counter).toEqual(1);
+  });
+
+  it('should fire updates on root key for update on nested key in transaction', function () {
+    var store = valstore.create({
+      someData: {
+        someId: 1,
+      },
+      user: null,
+    });
+
+    store.subscribe('someData', counterIncrement, { sync: true });
+
+    store.transaction(function () {
+      store.set('user', { id: 1, username: 'test', name: 'Testy McTesterpants' });
+      store.set('someData.someId', 2);
+    }, { sync: true });
+
+    expect(counter).toEqual(1);
+  });
+
+});
+
 describe('valstore.subscribe', function () {
   var counter = 0;
   var counterIncrement = function () { counter = counter+1; };

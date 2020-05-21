@@ -6,6 +6,10 @@ function rand(length) {
   return (+new Date * Math.random()).toString(36).substring(0, length || 12);
 }
 
+function flat(arrays) {
+  return [].concat.apply([], arrays);
+}
+
 function allKeys(key) {
   var arr = [];
 
@@ -70,10 +74,18 @@ function oset(obj, props, value) {
   return true;
 }
 
+function doAsync(work) {
+  setTimeout(work, 0);
+}
+
 /**
  * Export 'create' function
  */
 module.exports.create = function create(json) {
+  var _trx = {
+    active: false,
+    keys: [],
+  };
   var state = deepFreeze(json);
   var cbs = [];
   var api = {
@@ -85,37 +97,45 @@ module.exports.create = function create(json) {
 
       return v;
     },
-
     set: function(key, val, opts) {
-      if (!opts || !opts.silent) {
-        api.trigger(key, opts);
-      }
       state = clone(state);
       oset(state, key, val);
       state = deepFreeze(state);
+      if (!opts || !opts.silent) {
+        _trx.active ? _trx.keys.push(key) : api.trigger(key, opts);
+      }
       return state;
+    },
+    transaction: function (trx, opts) {
+      _trx.active = true;
+      trx();
+      function end() {
+        _trx.active = false;
+        api.trigger(_trx.keys, opts);
+        _trx.keys = [];
+      }
+      opts && opts.sync ? end() : doAsync(end);
     },
     trigger: function(sKey, opts) {
       var l = cbs.length;
+      var keys = sKey instanceof Array ? flat(sKey.map(function (k) { return allKeys(k); })) : allKeys(sKey);
 
-      allKeys(sKey).map(function(key) {
-        for(var i = 0; i < l; i++) {
-          var cb = cbs[i];
+      for(var i = 0; i < l; i++) {
+        var cb = cbs[i];
 
-          if (!cb) { continue; }
-          if (key == cb.key || cb.key == '*') {
-            (cb.opts.sync) ? cb.cb(state) : setTimeout(function() { return cbs[this].cb(state); }.bind(i), 0);
-          }
+        if (!cb) { continue; }
+        if (keys.indexOf(cb.key) !== -1 || cb.key == '*') {
+          (cb.opts.sync) ? cb.cb(state) : doAsync(function() { return cbs[this].cb(state); }.bind(i));
         }
-      });
+      }
     },
     subscribe: function(keys, cb, opts) {
       var id = rand();
       var kt = typeof keys;
 
       if (kt == 'function') {
-        cb = keys;
         opts = cb || {};
+        cb = keys;
         keys = ['*'];
       } else if (kt == 'string') {
         keys = [keys];
