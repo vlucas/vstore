@@ -76,6 +76,23 @@ describe('valstore.set', function () {
 
     expect(store.get()).not.toEqual(state);
   });
+
+  it('should set new object over root', function () {
+    var store = valstore.create({ foo: { bar: 'baz' } });
+
+    store.set('foo', { baz: 'qux' });
+
+    expect(store.get('foo.bar')).toEqual(undefined);
+  });
+
+  it('should deep merge new object over root one when merge option is true', function () {
+    var store = valstore.create({ foo: { bar: 'baz' } });
+
+    store.set('foo', { baz: 'qux' }, { merge: true });
+
+    expect(store.get('foo.bar')).toEqual('baz');
+    expect(store.get('foo.baz')).toEqual('qux');
+  });
 });
 
 describe('valstore.transaction', function () {

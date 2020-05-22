@@ -10,6 +10,41 @@ function flat(arrays) {
   return [].concat.apply([], arrays);
 }
 
+function isObject(item) {
+  return (item && typeof item === 'object' && !Array.isArray(item));
+}
+
+/**
+ * Performs a deep merge of objects and returns new object. Does not modify
+ * objects (immutable) and merges arrays via concatenation.
+ *
+ * @param {...object} objects - Objects to merge
+ * @returns {object} New object with merged key/values
+ */
+function mergeDeep(/*...objects */) {
+  var objects = Array.prototype.slice.call(arguments);
+  var pVal, oVal;
+
+  return objects.reduce((prev, obj) => {
+    Object.keys(obj).forEach(key => {
+      pVal = prev[key];
+      oVal = obj[key];
+
+      if (Array.isArray(pVal) && Array.isArray(oVal)) {
+        prev[key] = pVal.concat.apply(pVal, oVal);
+      }
+      else if (isObject(pVal) && isObject(oVal)) {
+        prev[key] = mergeDeep(pVal, oVal);
+      }
+      else {
+        prev[key] = oVal;
+      }
+    });
+
+    return prev;
+  }, {});
+}
+
 function allKeys(key) {
   var arr = [];
 
@@ -99,11 +134,17 @@ module.exports.create = function create(json) {
     },
     set: function(key, val, opts) {
       state = clone(state);
-      oset(state, key, val);
-      state = deepFreeze(state);
+      if (opts && opts.merge) {
+        var gVal = oget(state, key);
+        var nVal = mergeDeep(gVal, val);
+        oset(state, key, nVal);
+      } else {
+        oset(state, key, val);
+      }
       if (!opts || !opts.silent) {
         _trx.active ? _trx.keys.push(key) : api.trigger(key, opts);
       }
+      state = deepFreeze(state);
       return state;
     },
     transaction: function (trx, opts) {
