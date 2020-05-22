@@ -124,6 +124,25 @@ describe('valstore.transaction', function () {
     expect(counter).toEqual(1);
   });
 
+  it('should broadcast updates only once at the end of the transaction when the same key is updated more than once', function () {
+    var store = valstore.create({
+      someData: {
+        someId: 1,
+      },
+    });
+
+    store.subscribe('someData.someId', counterIncrement, { sync: true });
+
+    store.transaction(function () {
+      store.set('someData', { someId: 42 });
+      store.set('someData.someId', 2);
+      store.set('someData.someId', 3);
+      store.set('someData.someId', 4);
+    }, { sync: true });
+
+    expect(counter).toEqual(1);
+  });
+
 });
 
 describe('valstore.subscribe', function () {
