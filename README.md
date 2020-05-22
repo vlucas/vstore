@@ -73,6 +73,25 @@ store.set('user', { id: 2, name: 'Testy McTesterpants', email: 'test@example.com
 store.set('foo.bar.baz', 'qux');
 ```
 
+### transaction(function)
+
+Transactions set multiple values into the store in a batch before broadcasting any updates. For example if you call
+`store.set` twice (or even hundreds of times!) in a transaction, all the affected keys will be collected, and your
+matching subscribers will only fire once the transaction is complete instead of once instead of once per `set` call.
+
+Transactions are a good performant way to make many `set` calls in sequence in situations where your subscribers can
+wait to fire at the end.
+
+```js
+store.transaction(function () {
+  store.set('user', { id: 2, name: 'Testy McTesterpants', email: 'test@example.com' });
+  store.set('foo.bar.baz', 'qux');
+});
+```
+
+Note that any async `set` calls made will not be covered in the transaction (for example a `set` call after a `fetch`
+call that is wrapped in a transaction). Nested transactions are not supported.
+
 ### subscribe([key, ]callback)
 
 Subscribe a function to changes in the store. Just like `get`, this accepts

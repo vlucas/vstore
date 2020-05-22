@@ -107,6 +107,7 @@ module.exports.create = function create(json) {
       return state;
     },
     transaction: function (trx, opts) {
+      if (_trx.active) { throw new Error('[valstore] Nested transactions not supported.'); }
       _trx.active = true;
       trx();
       function end() {
