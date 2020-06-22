@@ -118,6 +118,7 @@ function doAsync(work) {
  */
 module.exports.create = function create(json) {
   var _trx = {
+    name: null,
     active: false,
     keys: [],
   };
@@ -128,7 +129,7 @@ module.exports.create = function create(json) {
       if (!key) {
         return state;
       }
-      var v = oget(state, key);
+      var v = typeof key === 'function' ? key(state) : oget(state, key);
 
       return v;
     },
@@ -147,11 +148,12 @@ module.exports.create = function create(json) {
       state = deepFreeze(state);
       return state;
     },
-    transaction: function (trx, opts) {
-      if (_trx.active) { throw new Error('[valstore] Nested transactions not supported.'); }
+    batch: function (name, trx, opts) {
+      _trx.name = name;
       _trx.active = true;
       trx();
       function end() {
+        _trx.name = null;
         _trx.active = false;
         api.trigger(_trx.keys, opts);
         _trx.keys = [];
@@ -171,13 +173,14 @@ module.exports.create = function create(json) {
         }
       }
     },
-    subscribe: function(keys, cb, opts) {
+    subscribe: function(cb, keys, opts) {
       var id = rand();
       var kt = typeof keys;
 
-      if (kt == 'function') {
-        opts = cb || {};
-        cb = keys;
+      if (kt == 'object') {
+        opts = keys;
+        keys = ['*'];
+      } else if (kt == 'undefined') {
         keys = ['*'];
       } else if (kt == 'string') {
         keys = [keys];
@@ -194,18 +197,18 @@ module.exports.create = function create(json) {
 
       return id;
     },
-    unsubscribe: function(id, fn) {
-      if (id === undefined) { // unsubscribe all when no arguments
+    unsubscribe: function(fn, keys) {
+      if (fn === undefined) { // unsubscribe all when no arguments
         cbs = [];
         return true;
       }
 
       cbs = cbs.filter(function (cb) {
         return !(
-          id == cb.id
-          || id == cb.key
-          || id == cb.cb
-          || (id == cb.key && fn == cb.cb)
+          fn == cb.id
+          || fn == cb.key
+          || fn == cb.cb
+          || (keys == cb.key && fn == cb.cb)
         );
       });
     }

@@ -48,6 +48,12 @@ describe('valstore.get', function () {
 			val.sort();
 		}).toThrowError('read only');
   });
+
+  it('should accept a function selector as a single argument', function () {
+    var store = valstore.create({ foo: { bar: 'baz' } });
+
+    expect(store.get(state => state.foo.bar)).toEqual('baz');
+  });
 });
 
 describe('valstore.set', function () {
@@ -95,7 +101,7 @@ describe('valstore.set', function () {
   });
 });
 
-describe('valstore.transaction', function () {
+describe('valstore.batch', function () {
   var counter = 0;
   var counterIncrement = function () { counter = counter+1; };
 
@@ -103,7 +109,7 @@ describe('valstore.transaction', function () {
     counter = 0;
   });
 
-  it('should broadcast updates only once at the end of the transaction', function () {
+  it('should broadcast updates only once at the end of the batch', function () {
     var store = valstore.create({
       foo: 'bar',
       bar: 'baz',
@@ -115,7 +121,7 @@ describe('valstore.transaction', function () {
 
     store.subscribe(counterIncrement, { sync: true });
 
-    store.transaction(function () {
+    store.batch('batchNameHere', function () {
       store.set('user', { id: 1, username: 'test', name: 'Testy McTesterpants' });
       store.set('someData.someId', 2);
     }, { sync: true });
@@ -123,7 +129,7 @@ describe('valstore.transaction', function () {
     expect(counter).toEqual(1);
   });
 
-  it('should fire updates on root key for update on nested key in transaction', function () {
+  it('should fire updates on root key for update on nested key in batch', function () {
     var store = valstore.create({
       someData: {
         someId: 1,
@@ -131,9 +137,9 @@ describe('valstore.transaction', function () {
       user: null,
     });
 
-    store.subscribe('someData', counterIncrement, { sync: true });
+    store.subscribe(counterIncrement, 'someData', { sync: true });
 
-    store.transaction(function () {
+    store.batch('batchNameHere', function () {
       store.set('user', { id: 1, username: 'test', name: 'Testy McTesterpants' });
       store.set('someData.someId', 2);
     }, { sync: true });
@@ -141,16 +147,16 @@ describe('valstore.transaction', function () {
     expect(counter).toEqual(1);
   });
 
-  it('should broadcast updates only once at the end of the transaction when the same key is updated more than once', function () {
+  it('should broadcast updates only once at the end of the batch when the same key is updated more than once', function () {
     var store = valstore.create({
       someData: {
         someId: 1,
       },
     });
 
-    store.subscribe('someData.someId', counterIncrement, { sync: true });
+    store.subscribe(counterIncrement, 'someData.someId', { sync: true });
 
-    store.transaction(function () {
+    store.batch('batchNameHere', function () {
       store.set('someData', { someId: 42 });
       store.set('someData.someId', 2);
       store.set('someData.someId', 3);
@@ -187,7 +193,7 @@ describe('valstore.subscribe', function () {
   it('should subscribe to key', function (done) {
     var store = valstore.create({ foo: 'bar' });
 
-    store.subscribe('foo', counterIncrement);
+    store.subscribe(counterIncrement, 'foo');
     store.set('foo', 'baz');
 
     setTimeout(function () {
@@ -199,7 +205,7 @@ describe('valstore.subscribe', function () {
   it('should call subscriber on root key when nested key receives an update', function (done) {
     var store = valstore.create({ cart: { items: [] } });
 
-    store.subscribe('cart', counterIncrement); // subscribe to root key
+    store.subscribe(counterIncrement, 'cart'); // subscribe to root key
     store.set('cart.items', [ 123 ]); // update nested key
 
     setTimeout(function () {
@@ -212,7 +218,7 @@ describe('valstore.subscribe', function () {
     var store = valstore.create({ foo: 'bar' });
     var result;
 
-    store.subscribe('foo', function (res) { result = res; });
+    store.subscribe(function (res) { result = res; }, 'foo');
     store.set('foo', 'baz');
 
     setTimeout(function () {
@@ -224,7 +230,7 @@ describe('valstore.subscribe', function () {
   it('should subscribe to multiple keys when given array', function (done) {
     var store = valstore.create({ foo: 'bar', bar: 'baz' });
 
-    store.subscribe(['foo', 'bar'], counterIncrement);
+    store.subscribe(counterIncrement, ['foo', 'bar']);
     store.set('foo', 'baz');
     store.set('bar', 'qux');
 
@@ -250,8 +256,8 @@ describe('valstore.unsubscribe', function () {
   it('should unsubscribe with matching key and callback', function (done) {
     var store = valstore.create({ foo: 'bar' });
 
-    store.subscribe('foo', counterIncrement);
-    store.unsubscribe('foo', counterIncrement);
+    store.subscribe(counterIncrement, 'foo');
+    store.unsubscribe(counterIncrement, 'foo');
     store.set('foo', 'baz');
 
     setTimeout(function () {
@@ -263,8 +269,8 @@ describe('valstore.unsubscribe', function () {
   it('should unsubscribe with key only', function (done) {
     var store = valstore.create({ foo: 'bar', bar: 'baz' });
 
-    store.subscribe('foo', counterIncrement);
-    store.subscribe('foo', counterIncrement2);
+    store.subscribe(counterIncrement, 'foo');
+    store.subscribe(counterIncrement2, 'foo');
     store.unsubscribe('foo');
     store.set('foo', 'baz');
     store.set('bar', 'qux');
@@ -278,7 +284,7 @@ describe('valstore.unsubscribe', function () {
 
   it('should unsubscribe with subscriber id', function (done) {
     var store = valstore.create({ foo: 'bar', bar: 'baz' });
-    var id = store.subscribe('foo', counterIncrement);
+    var id = store.subscribe(counterIncrement, 'foo');
 
     store.unsubscribe(id);
     store.set('foo', 'baz');
