@@ -1,3 +1,5 @@
+var _refs = {};
+
 function clone(json) {
   return JSON.parse(JSON.stringify(json));
 }
@@ -58,20 +60,6 @@ function allKeys(key) {
   return arr;
 }
 
-function deepFreeze(object) {
-  // Retrieve the property names defined on object
-  var propNames = Object.getOwnPropertyNames(object);
-
-  // Freeze properties before freezing self
-  for (let name of propNames) {
-    let value = object[name];
-
-    object[name] = value && typeof value === "object" ? deepFreeze(value) : value;
-  }
-
-  return Object.freeze(object);
-}
-
 function oget(obj, props) {
   if (typeof props == 'string') {
     props = props.split('.');
@@ -110,19 +98,22 @@ function oset(obj, props, value) {
 }
 
 function doAsync(work) {
-  setTimeout(work, 0);
+  return Promise.resolve(work());
 }
 
 /**
- * Export 'create' function
+ * 'create' function
  */
-module.exports.create = function create(json) {
+function createStore(storeName, json) {
+  if (!json) {
+    throw new Error('[valstore] createStore takes 2 arugments - a store name and the initial state object');
+  }
   var _trx = {
     name: null,
     active: false,
     keys: [],
   };
-  var state = deepFreeze(json);
+  var state = clone(json);
   var cbs = [];
   var api = {
     get: function(key) {
@@ -134,7 +125,7 @@ module.exports.create = function create(json) {
       return v;
     },
     set: function(key, val, opts) {
-      state = clone(state);
+      var notify = !opts || !opts.silent;
       if (opts && opts.merge) {
         var gVal = oget(state, key);
         var nVal = mergeDeep(gVal, val);
@@ -142,36 +133,42 @@ module.exports.create = function create(json) {
       } else {
         oset(state, key, val);
       }
-      if (!opts || !opts.silent) {
-        _trx.active ? _trx.keys.push(key) : api.trigger(key, opts);
+      if (_trx.active) {
+        _trx.keys.push(key);
+        return Promise.resolve(state);
       }
-      state = deepFreeze(state);
-      return state;
+      return notify ? api.trigger(key, opts).then(function () { return state; }) : Promise.resolve(state);
     },
     batch: function (name, trx, opts) {
       _trx.name = name;
       _trx.active = true;
-      trx();
-      function end() {
-        _trx.name = null;
-        _trx.active = false;
-        api.trigger(_trx.keys, opts);
-        _trx.keys = [];
-      }
-      opts && opts.sync ? end() : doAsync(end);
+      return doAsync(trx).then(function () { return api.batchEnd(); });
+    },
+    batchStart: function (name) {
+      _trx.name = name;
+      _trx.active = true;
+    },
+    batchEnd: function () {
+      _trx.name = null;
+      _trx.active = false;
+
+      return api.trigger(_trx.keys).then(function () { _trx.keys = []; });
     },
     trigger: function(sKey, opts) {
       var l = cbs.length;
       var keys = sKey instanceof Array ? flat(sKey.map(function (k) { return allKeys(k); })) : allKeys(sKey);
+      var p = [];
 
       for(var i = 0; i < l; i++) {
         var cb = cbs[i];
 
         if (!cb) { continue; }
         if (keys.indexOf(cb.key) !== -1 || cb.key == '*') {
-          (cb.opts.sync) ? cb.cb(state) : doAsync(function() { return cbs[this].cb(state); }.bind(i));
+          p.push(doAsync(function() { return cbs[this].cb(state); }.bind(i)));
         }
       }
+
+      return Promise.all(p);
     },
     subscribe: function(cb, keys, opts) {
       var id = rand();
@@ -214,8 +211,21 @@ module.exports.create = function create(json) {
     }
   };
 
+	_refs[storeName] = api;
+
   return api;
 }
 
+function getStore(storeName) {
+  const ref = _refs[storeName];
+
+  if (!ref) {
+    throw new Error('[valstore] Store with name "' + store + '" not found! Use "createStore("name", { ... })" first.');
+  }
+
+  return ref;
+}
+
 module.exports.clone = clone;
-module.exports.deepFreeze = deepFreeze;
+module.exports.createStore = createStore;
+module.exports.getStore = getStore;

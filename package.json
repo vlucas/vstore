@@ -2,7 +2,7 @@
   "name": "valstore",
   "version": "2.0.0",
   "description": "Featherweight key-based value store with zero dependencies",
-  "main": "src/index.js",
+  "main": "index.js",
   "scripts": {
     "test": "jest",
     "test:watch": "jest ---watch"
@@ -14,11 +14,40 @@
     "app",
     "store",
     "value",
-    "store"
+    "store",
+    "valstore",
+    "toystore"
   ],
   "author": "Vance Lucas <vance@vancelucas.com>",
   "license": "BSD-3-Clause",
+  "repository": "vlucas/valstore",
+  "sideEffects": false,
+  "peerDependencies": {
+    "preact": "^10.0.0",
+    "react": "^16.8.0"
+  },
+  "peerDependenciesMeta": {
+    "preact": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
+  },
   "devDependencies": {
-    "jest": "^26.0.1"
+    "@babel/core": "^7.5.5",
+    "@babel/plugin-transform-react-jsx": "^7.3.0",
+    "@testing-library/jest-dom": "^4.1.2",
+    "@testing-library/react": "^9.5.0",
+    "@testing-library/react-hooks": "^3.3.0",
+    "enzyme": "^3.11.0",
+    "htm": "^3.0.4",
+    "jest": "^26.0.1",
+    "preact": "^10.4.4",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1"
+  },
+  "dependencies": {
+    "enzyme-adapter-react-16": "^1.15.2"
   }
 }
