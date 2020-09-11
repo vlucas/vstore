@@ -34,7 +34,7 @@ npm install valstore --save
 
 Import if using ES6+ or Transpiling:
 ```js
-import valstore from 'valstore';
+import * as valstore from 'valstore';
 ```
 
 Require if using ES5 or Node.js:
@@ -44,21 +44,51 @@ const valstore = require('valstore');
 
 Create a new store instance with its initial state using `valstore.create()`:
 ```js
-const store = valstore.create({
+const store = valstore.createStore('app', {
   foo: {
     bar: 'baz'
   }
 });
 ```
 
-## API
+## Usage With React
 
-### create(initialState)
-
-Create a new store with its initial state. This should be an object.
+Valstore comes with a React hook + higher order component in the package that you can optionally import and use:
 
 ```js
-const store = valstore.create({
+// Store setup in some init/startup file...
+import { createStore } from 'valstore';
+
+createStore('app', {
+  dashboard: {
+    counter: 0,
+  }
+});
+
+// React Component in some other file...
+import { useValstore } from 'valstore/react';
+
+function Counter() {
+  const { counter, store } = useValstore('app', { counter: 'dashboard.counter' });
+
+  return (
+    <div>
+      <p>Counter: {counter}</p>
+      <button onClick={() => store.set('dashboard.counter', counter - 1)}> - </button>
+      <button onClick={() => store.set('dashboard.counter', counter + 1)}> + </button>
+    </div>
+  );
+}
+```
+
+## API
+
+### createStore(storeName: string, initialState : object)
+
+Create a new store with a name and its initial state. This should be an object.
+
+```js
+const store = valstore.createStore('app', {
   foo: {
     bar: 'baz'
   }
@@ -94,6 +124,16 @@ store.set('user', { id: 2, name: 'Testy McTesterpants', email: 'test@example.com
 store.set('foo.bar.baz', 'qux');
 ```
 
+#### Asynchronous Execution
+
+The `set` method is executed asynchronously and returns a `Promise` object. You can optionally `await` the
+call to `set` as needed to control the order of subscriber notifications:
+
+```js
+await store.set('user', { id: 2, name: 'Testy McTesterpants', email: 'test@example.com' });
+```
+
+
 ### batch(name: string, trx: function)
 
 Batches set multiple values into the store in a single transaction before broadcasting any updates. For example if you
@@ -110,8 +150,14 @@ store.batch('USER_UPDATE', function () {
 });
 ```
 
-Note that any async `set` calls made will not be covered in the batch (for example a `set` call after a `fetch` call
- that is wrapped in a separate batch). Nested batches are not recommended as they are not accounted for by valstore.
+#### Asynchronous Execution
+
+The `batch` method is executed asynchronously and returns a `Promise` object. You can optionally `await` the
+call to `set` as needed to control the order of subscriber notifications.
+
+Note that any `set` calls made after other async methods may not be covered in the batch (for example a `set` call after
+a `fetch` call that is wrapped in a separate batch). Nested batches are not recommended as they are not accounted
+for by valstore and will have undefined behavior.
 
 ### subscribe(callback: function, [key: string | string[]])
 

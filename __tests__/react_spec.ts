@@ -1,28 +1,19 @@
-const React = require('react');
-const { html } = require('htm/react');
-const { createStore } = require('../index');
-const { useValstore, connectValstore } = require('../react/index');
-
-/*
-const Enzyme = require('enzyme');
-const Adapter = require('enzyme-adapter-react-16');
-const { render } = Enzyme;
-
-Enzyme.configure({ adapter: new Adapter() });
-*/
-
-// React testing-library
-const { render, screen, waitForElement, waitForDomChange } = require('@testing-library/react');
-const { renderHook } = require('@testing-library/react-hooks');
-const { act } = require('react-dom/test-utils');
-//require('@testing-library/jest-dom/extend-expect');
+/**
+ * @jest-environment jsdom
+ */
+import { html } from 'htm/react';
+import { render, waitForElement, waitForDomChange } from '@testing-library/react';
+import { renderHook } from '@testing-library/react-hooks';
+import { act } from 'react-dom/test-utils';
+const { createStore, getStore } = require('../src/index');
+const { useValstore, connectValstore } = require('../src/react');
 
 // Test component...
-function App(props) {
+function App(props: any) {
   const state = props.state;
 
   return html`
-    <div>StatelessComponent: ${state ? html`<span data-testid="state">State: ${JSON.stringify(state)}</span>` : ''}</div>
+    <div>StatelessComponent: ${state ? html`<div><span data-testid="state">State: ${JSON.stringify(state)};</span><span data-testid="foobar">${state.foobar}</span></div>` : ''}</div>
   `;
 }
 
@@ -32,7 +23,7 @@ function testSetup() {
     number: 2,
     other: 'somethingelse',
   });
-  const ConnectedApp = connectValstore(store, App);
+  const ConnectedApp = connectValstore(getStore('test'), App);
 
   return { store, ConnectedApp };
 }
@@ -48,36 +39,17 @@ describe('connectValstore', () => {
 
     expect(getByTestId('state').innerHTML).toContain('"foobar":"nope"');
   });
-
-  it('should re-render with new store data', async () => {
-    const { ConnectedApp, store } = testSetup();
-    const { getByTestId } = render(html`<${ConnectedApp} />`);
-
-    await act(async () => {
-      await store.set('foobar', 'nope');
-    });
-
-    expect(getByTestId('state').innerHTML).toContain('"foobar":"nope"');
-  });
 });
 
 describe('useValstore', () => {
-  it('should use hooks to re-render with store update', async () => {
-    const { store } = testSetup();
+  it('test renderHook', () => {
+    testSetup();
+    const { result } = renderHook(() => useValstore(getStore('test')));
 
-    function WithHooks() {
-      let { state } = useValstore(store);
-
-      return html`<div data-testid="state">${JSON.stringify(state)}</div>`;
-    }
-
-    const { container, getByTestId } = render(html`<${WithHooks} />`);
-
-    await act(async () => {
-      await store.set('foobar', 'nope');
-    });
-
-    expect(getByTestId('state').innerHTML).toContain('"foobar":"nope"');
+    act(() => {
+      result.current.store.set('foobar', 'test');
+    })
+    expect(result.current.state.foobar).toEqual('test');
   });
 });
 
@@ -90,7 +62,7 @@ describe('render performance', () => {
     function WithHooks() {
       renderCount++;
 
-      let { state, foobar } = useValstore(store, {
+      let { foobar } = useValstore(getStore('test'), {
         foobar: 'foobar',
       });
 
@@ -119,7 +91,7 @@ describe('render performance', () => {
     function WithHooks() {
       renderCount++;
 
-      let { state, foobar } = useValstore(store, {
+      let { foobar } = useValstore(getStore('test'), {
         foobar: 'foobar',
       });
 

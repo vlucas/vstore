@@ -1,4 +1,4 @@
-const valstore = require('../index.js');
+const valstore = require('../src/index');
 
 describe('valstore.createStore', function () {
 
@@ -34,7 +34,7 @@ describe('valstore.get', function () {
   it('should accept a function selector as a single argument', function () {
     var store = valstore.createStore('test', { foo: { bar: 'baz' } });
 
-    expect(store.get(state => state.foo.bar)).toEqual('baz');
+    expect(store.get((state: any) => state.foo.bar)).toEqual('baz');
   });
 });
 
@@ -73,15 +73,6 @@ describe('valstore.set', function () {
     expect(store.get('foo.bar')).toEqual(undefined);
   });
 
-  it('should deep merge new object over root one when merge option is true', function () {
-    var store = valstore.createStore('test', { foo: { bar: 'baz' } });
-
-    store.set('foo', { baz: 'qux' }, { merge: true });
-
-    expect(store.get('foo.bar')).toEqual('baz');
-    expect(store.get('foo.baz')).toEqual('qux');
-  });
-
   it('should return a Promise', async function () {
     var store = valstore.createStore('test', { foo: { bar: 'baz' } });
 
@@ -109,7 +100,7 @@ describe('valstore.batch', function () {
       },
     });
 
-    store.subscribe(counterIncrement, { sync: true });
+    store.subscribe(counterIncrement);
 
     await store.batch('batchNameHere', function () {
       store.set('user', { id: 1, username: 'test', name: 'Testy McTesterpants' });
@@ -127,7 +118,7 @@ describe('valstore.batch', function () {
       user: null,
     });
 
-    store.subscribe(counterIncrement, 'someData', { sync: true });
+    store.subscribe(counterIncrement, 'someData');
 
     await store.batch('batchNameHere', function () {
       store.set('user', { id: 1, username: 'test', name: 'Testy McTesterpants' });
@@ -144,7 +135,7 @@ describe('valstore.batch', function () {
       },
     });
 
-    store.subscribe(counterIncrement, 'someData.someId', { sync: true });
+    store.subscribe(counterIncrement, 'someData.someId');
 
     await store.batch('batchNameHere', function () {
       store.set('someData', { someId: 42 });
@@ -176,6 +167,18 @@ describe('valstore.subscribe', function () {
     expect(counter).toEqual(2);
   });
 
+  it('should subscribe to all changes when only passing in a callback and get updated values', async function () {
+    const store = valstore.createStore('test', { foo: 'bar', items: 2 });
+    let val;
+
+    store.subscribe(() => {
+      val = store.get('foo');
+    });
+    await store.set('foo', 'baz');
+
+    expect(val).toEqual('baz');
+  });
+
   it('should subscribe to key', async function () {
     const store = valstore.createStore('test', { foo: 'bar' });
 
@@ -198,7 +201,7 @@ describe('valstore.subscribe', function () {
     const store = valstore.createStore('test', { foo: 'bar' });
     let result;
 
-    store.subscribe(function (res) { result = res; }, 'foo');
+    store.subscribe(function (res: any) { result = res; }, 'foo');
     await store.set('foo', 'baz');
 
     expect(result).toEqual(store.get());
