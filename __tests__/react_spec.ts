@@ -5,6 +5,7 @@ import { html } from 'htm/react';
 import { render, waitForElement, waitForDomChange } from '@testing-library/react';
 import { renderHook } from '@testing-library/react-hooks';
 import { act } from 'react-dom/test-utils';
+import { act as reactAct } from 'react-test-renderer';
 const { createStore, getStore } = require('../src/index');
 const { useValstore, connectValstore } = require('../src/react');
 
@@ -46,9 +47,9 @@ describe('useValstore', () => {
     testSetup();
     const { result } = renderHook(() => useValstore(getStore('test')));
 
-    act(() => {
+    reactAct(() => {
       result.current.store.set('foobar', 'test');
-    })
+    });
     expect(result.current.state.foobar).toEqual('test');
   });
 });

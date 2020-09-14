@@ -1,6 +1,6 @@
 const _vrefs: any = {};
 
-function getStore(storeName: string) {
+export function getStore(storeName: string) {
   const ref = _vrefs[storeName];
 
   if (!ref) {
@@ -10,7 +10,7 @@ function getStore(storeName: string) {
   return ref;
 }
 
-function setStore(storeName: string, store: any) {
+export function setStore(storeName: string, store: any) {
   _vrefs[storeName] = store;
 }
 
@@ -31,6 +31,8 @@ type ValstoreCallback = {
   id: string,
   key: string | string[],
 };
+
+type ValstoreSetter = (state: any) => {};
 
 function clone(json: object) {
   return JSON.parse(JSON.stringify(json));
@@ -101,7 +103,14 @@ function doAsync(work: Callback) {
 /**
  * 'create' function
  */
-function createStore(storeName: string, json: any) {
+export function createStore(storeName: string, json: any) {
+  const store = _makeStore(json);
+
+  setStore(storeName, store);
+  return store;
+}
+
+function _makeStore(json: any) {
   if (!json) {
     throw new Error('[valstore] createStore takes 2 arugments - a store name and the initial state object');
   }
@@ -115,7 +124,7 @@ function createStore(storeName: string, json: any) {
 
   // Public API
   const api = {
-    get: function(key?: string | ((state: any) => {})) {
+    get(key?: string | ((state: any) => {})) {
       if (!key) {
         return state;
       }
@@ -123,31 +132,36 @@ function createStore(storeName: string, json: any) {
 
       return v;
     },
-    set: function(key: string, val: any, opts?: SetOptions) {
+    set(key: string | ValstoreSetter, val: any, opts?: SetOptions) {
       const notify = !opts || !opts.silent;
-      oset(state, key, val);
-      if (_trx.active) {
-        _trx.keys.push(key);
-        return Promise.resolve(state);
+      if (typeof key === 'function') {
+        state = key(state);
+        key = '*';
+      } else {
+        oset(state, key, val);
+        if (_trx.active) {
+          _trx.keys.push(key);
+          return Promise.resolve(state);
+        }
       }
       return notify ? api.trigger(key).then(function () { return state; }) : Promise.resolve(state);
     },
-    batch: function (name: string, trx: Callback) {
+    batch(name: string, trx: Callback) {
       _trx.name = name;
       _trx.active = true;
       return doAsync(trx).then(function () { return api.batchEnd(); });
     },
-    batchStart: function (name: string) {
+    batchStart(name: string) {
       _trx.name = name;
       _trx.active = true;
     },
-    batchEnd: function () {
+    batchEnd() {
       _trx.name = null;
       _trx.active = false;
 
       return api.trigger(_trx.keys).then(function () { _trx.keys = []; });
     },
-    trigger: function(sKey: string | string[]) {
+    trigger(sKey: string | string[]) {
       const l = cbs.length;
       const keys = sKey instanceof Array ? flat(sKey.map(function (k) { return allKeys(k); })) : allKeys(sKey);
       const p = [];
@@ -163,7 +177,7 @@ function createStore(storeName: string, json: any) {
 
       return Promise.all(p);
     },
-    subscribe: function(cb: (state: any) => void, keys?: string | string[]) {
+    subscribe(cb: (state: any) => void, keys?: string | string[]) {
       const id = rand(12);
       const kt = typeof keys;
 
@@ -183,7 +197,7 @@ function createStore(storeName: string, json: any) {
 
       return id;
     },
-    unsubscribe: function(fn: any, keys?: string | string[]) {
+    unsubscribe(fn: any, keys?: string | string[]) {
       if (fn === undefined) { // unsubscribe all when no arguments
         cbs = [];
         return true;
@@ -197,17 +211,8 @@ function createStore(storeName: string, json: any) {
           || (keys == cb.key && fn == cb.cb)
         );
       });
-    }
+    },
   };
-
-	setStore(storeName, api);
 
   return api;
 }
-
-module.exports = {
-  createStore,
-  clone,
-  getStore,
-  setStore,
-};

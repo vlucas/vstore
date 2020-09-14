@@ -1,17 +1,19 @@
-const { createElement, forwardRef, useEffect, useState } = require('react');
+import { createElement, forwardRef, useEffect, useState } from 'react';
 
-function useValstore(store: any, keyMap?: any) {
-  const keys = keyMap ? Object.keys(keyMap) : [];
+export function useValstore(store: any, keyMap?: any) {
+  const [state, setState] = useState({ value: store.get() });
+  const keys: string[] = keyMap ? Object.keys(keyMap) : [];
   const keyLen = keys.length;
   const memoMap = [].concat(keys);
-  const [state, setState] = useState({ value: store.get() });
   const mapped: any = {};
+  const subKeys: string[] = [];
 
   if (keyLen) {
     for (let i = 0; i < keyLen; i++) {
       const val = store.get(keyMap[keys[i]]);
       mapped[keys[i]] = val;
       memoMap.push(val);
+      subKeys.push(keyMap[keys[i]]);
     }
   }
 
@@ -26,7 +28,7 @@ function useValstore(store: any, keyMap?: any) {
       }
 
       _lastParams = mapped;
-    }, keys);
+    }, subKeys.length ? subKeys : undefined);
 
     return function _valstoreReactUnsubscribe() {
       store.unsubscribe(subId);
@@ -36,15 +38,10 @@ function useValstore(store: any, keyMap?: any) {
   return Object.assign({}, mapped, { state: state.value, store });
 }
 
-function connectValstore(store: any, Component: any, keyMap?: any) {
+export function connectValstore(store: any, Component: any, keyMap?: any) {
   return forwardRef((originProps: any, ref: any) => {
     const props = Object.assign({}, originProps, useValstore(store, keyMap), { ref });
     // @ts-ignore-next-line
     return createElement(Component, props);
   })
 }
-
-module.exports = {
-  connectValstore,
-  useValstore,
-};

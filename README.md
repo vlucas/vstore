@@ -7,8 +7,7 @@ Status](https://travis-ci.org/vlucas/valstore.png?branch=master)](https://travis
 
 Featherweight key-based central store of state with zero dependencies.
 
-Spiritual successor to [toystore](https://github.com/vlucas/toystore). *valstore*
-is lighter weight, has no dependencies, and has a smaller, leaner API.
+*Valstore* is light weight, has no dependencies, and has a small, lean API with everything you need.
 
 Val = Value
 
@@ -16,11 +15,14 @@ Store = Central store of application state
 
 ## Easy to Learn and Use
 
-Other state management systems can be difficult or cumbersome to use, or
-require a lot of repetitive boilerplate code that gets in the way.
+The goal here is **low conceptual overhead**. Just subscribe components to listen for updates to certain data keys, and
+then `set` that data by key. That's it.
 
-*valstore* is based around `get` and `set` calls with nested keys for object
-structures, like `store.get('foo.bar.baz')`.
+Other state management systems can be difficult or cumbersome to use, or require a lot of repetitive boilerplate code
+that gets in the way.
+
+*Valstore* is based around `get`, `set`, and `subscribe` calls with nested keys for object structures, like
+`store.get('foo.bar.baz')`.
 
 ## Install
 
