@@ -1,6 +1,6 @@
 {
   "name": "valstore",
-  "version": "3.0.0",
+  "version": "3.0.1-beta.0",
   "description": "Featherweight key-based value store with zero dependencies",
   "main": "pkg/dist-src/index.js",
   "scripts": {
