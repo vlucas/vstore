@@ -1,2 +1,5 @@
+.DS_Store
 .git
+dist
 node_modules
+pkg
