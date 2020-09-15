@@ -8,7 +8,8 @@
     "build:parcel": "npm run -s clean && parcel build build.html && mv dist/src.*.js dist/index.js && mv dist/react.*.js dist/react.js",
     "clean": "rm -rf dist/ pkg/ .cache/",
     "test": "jest",
-    "test:watch": "jest ---watch"
+    "test:watch": "jest ---watch",
+    "version": "npm run build"
   },
   "keywords": [
     "redux",
